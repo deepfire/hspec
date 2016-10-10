@@ -42,6 +42,7 @@ library
     , hspec-discover ==2.5.0
     , transformers >=0.2.2.0
     , hspec-expectations
+    , transformers >= 0.2.2.0
     , setenv
     , deepseq
     , random
@@ -101,7 +102,7 @@ executable hspec-meta-discover
       base == 4.*
     , transformers >= 0.2.2.0
     , QuickCheck >= 2.5.1
-    , hspec-expectations
+    , hspec-expectations >= 0.8.0
     , HUnit
     , setenv
     , deepseq

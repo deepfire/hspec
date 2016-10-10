@@ -29,7 +29,8 @@ dependencies:
   - QuickCheck >= 2.10
   - transformers >= 0.2.2.0
 
-  - hspec-expectations
+  - hspec-expectations >= 0.8.0
+  - HUnit
   - setenv
   - deepseq
   - random
