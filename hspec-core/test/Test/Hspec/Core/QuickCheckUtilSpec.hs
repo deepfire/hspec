@@ -1,5 +1,7 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 module Test.Hspec.Core.QuickCheckUtilSpec (spec) where
 
 import           Helper
@@ -7,6 +9,10 @@ import           Helper
 import           Control.Exception
 
 import           Test.Hspec.Core.QuickCheckUtil
+
+deriving instance Eq QuickCheckResult
+deriving instance Eq Status
+deriving instance Eq QuickCheckFailure
 
 spec :: Spec
 spec = do
