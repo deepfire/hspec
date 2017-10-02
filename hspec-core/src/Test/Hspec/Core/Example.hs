@@ -61,7 +61,7 @@ type ActionWith a = a -> IO ()
 
 -- | The result of running an example
 data Result = Result {
-  resultInfo :: String
+  resultInformal :: String
 , resultStatus :: ResultStatus
 } deriving (Show, Typeable)
 
@@ -175,33 +175,33 @@ instance Example (a -> QC.Property) where
 
 fromQuickCheckResult :: QC.Result -> Result
 fromQuickCheckResult r = case parseQuickCheckResult r of
-  QuickCheckResult _ (QuickCheckOtherFailure err) -> Result "" $ Failure Nothing (Reason err)
-  QuickCheckResult _ (QuickCheckSuccess s) -> Result s Success
-  QuickCheckResult n (QuickCheckFailure QCFailure{..}) -> case quickCheckFailureException of
+  QuickCheckResult _ info (QuickCheckOtherFailure err) -> Result info $ Failure Nothing (Reason err)
+  QuickCheckResult _ info QuickCheckSuccess -> Result info Success
+  QuickCheckResult n info (QuickCheckFailure QCFailure{..}) -> case quickCheckFailureException of
     Just e | Just result <- fromException e -> result
     Just e | Just hunit <- fromException e -> hunitFailureToResult (Just hunitAssertion) hunit
     Just e -> failure (uncaughtException e)
     Nothing -> failure falsifiable
     where
-      failure = Result "" . Failure Nothing . Reason
+      failure = Result info . Failure Nothing . Reason
 
       numbers = formatNumbers n quickCheckFailureNumShrinks
 
       hunitAssertion :: String
       hunitAssertion = intercalate "\n" [
           "Falsifiable " ++ numbers ++ ":"
-        , indent quickCheckFailureCounterexample
+        , indent (unlines quickCheckFailureCounterexample)
         ]
 
       uncaughtException e = intercalate "\n" [
           "uncaught exception: " ++ formatException e
         , numbers
-        , indent quickCheckFailureCounterexample
+        , indent (unlines quickCheckFailureCounterexample)
         ]
 
       falsifiable = intercalate "\n" [
           quickCheckFailureReason ++ " " ++ numbers ++ ":"
-        , indent quickCheckFailureCounterexample
+        , indent (unlines quickCheckFailureCounterexample)
         ]
 
 indent :: String -> String

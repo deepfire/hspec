@@ -11,6 +11,7 @@ import           Data.Maybe
 import           Data.Int
 import           System.Random
 import           Test.QuickCheck
+import           Test.QuickCheck.Text (isOneLine)
 import qualified Test.QuickCheck.Property as QCP
 import           Test.QuickCheck.Property hiding (Result(..))
 import           Test.QuickCheck.Gen
@@ -52,11 +53,12 @@ formatNumbers n shrinks = "(after " ++ pluralize n "test" ++ shrinks_ ++ ")"
 
 data QuickCheckResult = QuickCheckResult {
   quickCheckResultNumTests :: Int
+, quickCheckResultInformal :: String
 , quickCheckResultStatus :: Status
 } deriving Show
 
 data Status =
-    QuickCheckSuccess String
+    QuickCheckSuccess
   | QuickCheckFailure QuickCheckFailure
   | QuickCheckOtherFailure String
   deriving Show
@@ -65,27 +67,33 @@ data QuickCheckFailure = QCFailure {
   quickCheckFailureNumShrinks :: Int
 , quickCheckFailureException :: Maybe SomeException
 , quickCheckFailureReason :: String
-, quickCheckFailureCounterexample :: String
+, quickCheckFailureCounterexample :: [String]
 } deriving Show
 
 parseQuickCheckResult :: Result -> QuickCheckResult
 parseQuickCheckResult r = case r of
-  Success {..} -> result (QuickCheckSuccess  $ formatLabels numTests labels)
+  Success {..} -> result (formatLabels numTests labels) QuickCheckSuccess
 
-  Failure {..} -> case mCounterexample of
-    Nothing -> otherFailure
-    Just c -> result (QuickCheckFailure $ QCFailure numShrinks theException reason c)
+  Failure {..} ->
+    case stripSuffix outputWithoutVerbose output of
+      Just xs -> result verboseOutput (QuickCheckFailure $ QCFailure numShrinks theException reason failingTestCase)
+        where
+          verboseOutput
+            | xs == "*** Failed! " = ""
+            | otherwise = xs
+      Nothing -> otherFailure
     where
+      outputWithoutVerbose = reasonAndNumbers ++ unlines failingTestCase
+      reasonAndNumbers
+        | isOneLine reason = reason ++ " " ++ numbers ++ ": \n"
+        | otherwise = numbers ++ ": \n" ++ ensureTrailingNewline reason
       numbers = formatNumbers numTests numShrinks
-      mCounterexample = maybeStripSuffix "\n" <$> (stripPrefix prefix1 output <|> stripPrefix prefix2 output)
-      prefix1 = "*** Failed! " ++ reason ++ " " ++ numbers ++ ": \n"
-      prefix2 = "*** Failed! " ++ numbers ++ ": \n" ++ ensureTrailingNewline reason
 
-  GaveUp {..} -> result (QuickCheckOtherFailure $ "Gave up after " ++ pluralize numTests "test")
-  NoExpectedFailure {..} -> result (QuickCheckOtherFailure $ "Passed " ++ pluralize numTests "test" ++ " (expected failure)")
+  GaveUp {..} -> result "" (QuickCheckOtherFailure $ "Gave up after " ++ pluralize numTests "test")
+  NoExpectedFailure {..} -> result "" (QuickCheckOtherFailure $ "Passed " ++ pluralize numTests "test" ++ " (expected failure)")
   InsufficientCoverage {..} -> otherFailure
   where
-    otherFailure = result (QuickCheckOtherFailure $ maybeStripPrefix "*** " . strip $ output r)
+    otherFailure = result "" (QuickCheckOtherFailure $ maybeStripPrefix "*** " . strip $ output r)
     result = QuickCheckResult (numTests r)
 
 ensureTrailingNewline :: String -> String
@@ -96,3 +104,6 @@ maybeStripPrefix prefix m = fromMaybe m (stripPrefix prefix m)
 
 maybeStripSuffix :: String -> String -> String
 maybeStripSuffix suffix = reverse . maybeStripPrefix suffix . reverse
+
+stripSuffix :: Eq a => [a] -> [a] -> Maybe [a]
+stripSuffix suffix = fmap reverse . stripPrefix (reverse suffix) . reverse
