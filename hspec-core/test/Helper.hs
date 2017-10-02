@@ -48,7 +48,7 @@ import qualified Test.Hspec.Core.Spec as H
 import qualified Test.Hspec.Core.Runner as H
 import           Test.Hspec.Core.QuickCheckUtil (mkGen)
 import           Test.Hspec.Core.Clock
-import           Test.Hspec.Core.Example(Result(..), FailureReason(..))
+import           Test.Hspec.Core.Example(Result(..), ResultStatus(..), FailureReason(..))
 
 #if !MIN_VERSION_base(4,7,0)
 deriving instance Eq ErrorCall
@@ -61,6 +61,7 @@ exceptionEq a b
   | otherwise = undefined
 
 deriving instance Eq FailureReason
+deriving instance Eq ResultStatus
 deriving instance Eq Result
 
 instance Eq SomeException where
