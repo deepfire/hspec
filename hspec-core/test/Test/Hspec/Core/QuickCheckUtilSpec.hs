@@ -42,11 +42,11 @@ spec = do
 
       it "parses result" $ do
         parseQuickCheckResult <$> qc p `shouldReturn`
-          QuickCheckResult 100 "" QuickCheckSuccess
+          QuickCheckResult 100 "+++ OK, passed 100 tests.\n" QuickCheckSuccess
 
       it "includes labels" $ do
         parseQuickCheckResult <$> qc (label "unit" p) `shouldReturn`
-          QuickCheckResult 100 "100% unit\n" QuickCheckSuccess
+          QuickCheckResult 100 "+++ OK, passed 100 tests (100% unit).\n" QuickCheckSuccess
 
     context "with GaveUp" $ do
       let p :: Int -> Property

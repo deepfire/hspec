@@ -129,11 +129,11 @@ spec = do
 
     context "for Property" $ do
       it "returns Success if property holds" $ do
-        evaluateExample (property $ \n -> n == (n :: Int)) `shouldReturn` Result "" Success
+        evaluateExample (property $ \n -> n == (n :: Int)) `shouldReturn` Result "+++ OK, passed 1000 tests.\n" Success
 
       it "shows the collected labels" $ do
         Result info Success <- evaluateExample $ property $ \ () -> label "unit" True
-        info `shouldBe` "100.0% unit\n"
+        info `shouldBe` "+++ OK, passed 1000 tests (100.0% unit).\n"
 
       it "returns Failure if property does not hold" $ do
         Result "" (Failure _ _) <- evaluateExample $ property $ \n -> n /= (n :: Int)
@@ -155,7 +155,7 @@ spec = do
               e
               readIORef ref `shouldReturn` succ n
               modifyIORef ref succ
-        Result "" Success <- evaluateExampleWith action (property $ \(_ :: Int) -> modifyIORef ref succ)
+        Result _ Success <- evaluateExampleWith action (property $ \(_ :: Int) -> modifyIORef ref succ)
         readIORef ref `shouldReturn` 2000
 
       it "pretty-prints exceptions" $ do

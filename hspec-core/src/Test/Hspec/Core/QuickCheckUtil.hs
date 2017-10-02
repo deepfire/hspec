@@ -72,7 +72,7 @@ data QuickCheckFailure = QCFailure {
 
 parseQuickCheckResult :: Result -> QuickCheckResult
 parseQuickCheckResult r = case r of
-  Success {..} -> result (formatLabels numTests labels) QuickCheckSuccess
+  Success {..} -> result output QuickCheckSuccess
 
   Failure {..} ->
     case stripSuffix outputWithoutVerbose output of
