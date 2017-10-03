@@ -2,6 +2,7 @@
 {-# LANGUAGE NoMonomorphismRestriction #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
+{-# OPTIONS_GHC -fno-warn-name-shadowing #-}
 module Test.Hspec.Core.QuickCheckUtilSpec (spec) where
 
 import           Helper
@@ -34,7 +35,9 @@ spec = do
       stripSuffix "bar" "foobar" `shouldBe` Just "foo"
 
   describe "parseQuickCheckResult" $ do
-    let qc = quickCheckWithResult stdArgs {chatty = False, replay = Just (mkGen 0, 0)}
+    let
+      args = stdArgs {chatty = False, replay = Just (mkGen 0, 0)}
+      qc = quickCheckWithResult args
 
     context "with Success" $ do
       let p :: Int -> Bool
@@ -52,9 +55,23 @@ spec = do
       let p :: Int -> Property
           p n = (n == 1234) ==> True
 
+          qc = quickCheckWithResult args {maxSuccess = 2, maxDiscardRatio = 1}
+          result = QuickCheckResult 0 "" (QuickCheckOtherFailure "Gave up after 0 tests!")
+
       it "parses result" $ do
-        parseQuickCheckResult <$> qc p `shouldReturn`
-          QuickCheckResult 0 "" (QuickCheckOtherFailure "Gave up after 0 tests")
+        parseQuickCheckResult <$> qc p `shouldReturn` result
+
+      it "includes verbose output" $ do
+        let
+          info = unlines [
+              "Skipped (precondition false):"
+            , "0"
+            , ""
+            , "Skipped (precondition false):"
+            , "0"
+            , ""
+            ]
+        parseQuickCheckResult <$> qc (verbose p) `shouldReturn` result {quickCheckResultInformal = info}
 
     context "with NoExpectedFailure" $ do
       let p :: Int -> Property

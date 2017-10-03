@@ -81,7 +81,7 @@ parseQuickCheckResult r = case r of
           verboseOutput
             | xs == "*** Failed! " = ""
             | otherwise = xs
-      Nothing -> otherFailure
+      Nothing -> couldNotParse output
     where
       outputWithoutVerbose = reasonAndNumbers ++ unlines failingTestCase
       reasonAndNumbers
@@ -89,12 +89,19 @@ parseQuickCheckResult r = case r of
         | otherwise = numbers ++ ": \n" ++ ensureTrailingNewline reason
       numbers = formatNumbers numTests numShrinks
 
-  GaveUp {..} -> result "" (QuickCheckOtherFailure $ "Gave up after " ++ pluralize numTests "test")
+  GaveUp {..} ->
+    case stripSuffix outputWithoutVerbose output of
+      Just info -> result info (QuickCheckOtherFailure $ "Gave up after " ++ pluralize numTests "test" ++ "!")
+      Nothing -> couldNotParse output
+    where
+      outputWithoutVerbose = "*** Gave up! Passed only 0 tests.\n"
+
   NoExpectedFailure {..} -> result "" (QuickCheckOtherFailure $ "Passed " ++ pluralize numTests "test" ++ " (expected failure)")
   InsufficientCoverage {..} -> otherFailure
   where
     otherFailure = result "" (QuickCheckOtherFailure $ maybeStripPrefix "*** " . strip $ output r)
     result = QuickCheckResult (numTests r)
+    couldNotParse = result "" . QuickCheckOtherFailure
 
 ensureTrailingNewline :: String -> String
 ensureTrailingNewline = unlines . lines
